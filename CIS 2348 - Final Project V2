@@ -9,3 +9,27 @@ class InventoryItem:
         self.price = price
         self.service_date = datetime.strptime(service_date, '%m/%d/%Y')
         self.damaged = damaged
+
+'''Reading the CSV files and parsing the data'''
+def read_csv(file_name):
+    with open(file_name, mode='r') as file:
+        csv_reader = csv.reader(file)
+        data = [row for row in csv_reader]
+    return data
+
+def write_csv(file_name, data, headers=None):
+    with open(file_name, mode='w', newline='') as file:
+        csv_writer = csv.writer(file)
+        if headers:
+            csv_writer.writerow(headers)
+        csv_writer.writerows(data)
+
+def parse_manufacturer_list(data):
+    items = {}
+    for row in data:
+        item_id = row[0]
+        manufacturer = row[1]
+        item_type = row[2]
+        damaged = row[3] if len(row) > 3 else ''
+        items[item_id] = InventoryItem(item_id, manufacturer, item_type, 0, '01/01/1900', damaged == 'damaged')
+    return items
