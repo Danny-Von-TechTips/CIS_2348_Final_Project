@@ -33,3 +33,17 @@ def parse_manufacturer_list(data):
         damaged = row[3] if len(row) > 3 else ''
         items[item_id] = InventoryItem(item_id, manufacturer, item_type, 0, '01/01/1900', damaged == 'damaged')
     return items
+
+def parse_price_list(items, data):
+    for row in data:
+        item_id = row[0]
+        price = float(row[1])
+        if item_id in items:
+            items[item_id].price = price
+
+def parse_service_dates_list(items, data):
+    for row in data:
+        item_id = row[0]
+        service_date = row[1]
+        if item_id in items:
+            items[item_id].service_date = datetime.strptime(service_date, '%m/%d/%Y')
