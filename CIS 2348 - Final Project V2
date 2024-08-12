@@ -1,0 +1,128 @@
+import csv
+from datetime import datetime
+
+# defining simple class to store information about an inventory item
+class InventoryItem:
+    def __init__(self, item_id, manufacturer, item_type, price, service_date, damaged):
+        self.item_id = item_id
+        self.manufacturer = manufacturer
+        self.item_type = item_type
+        self.price = price
+        self.service_date = service_date
+        self.damaged = damaged
+
+# reads data from a CSV file
+def read_csv(file_name):
+    with open(file_name, 'r') as file:
+        reader = csv.reader(file)
+        return list(reader)
+
+# writes data to a CSV file
+def write_csv(file_name, data, headers=None):
+    with open(file_name, 'w', newline='') as file:
+        writer = csv.writer(file)
+        if headers:
+            writer.writerow(headers)
+        for row in data:
+            writer.writerow(row)
+
+# stores manufacturer list and create inventory items
+def parse_manufacturer_list(data):
+    items = {}
+    for row in data:
+        item_id = row[0]
+        manufacturer = row[1]
+        item_type = row[2]
+        damaged = False
+        if len(row) > 3 and row[3] == 'damaged':
+            damaged = True
+        items[item_id] = InventoryItem(item_id, manufacturer, item_type, 0, '01/01/1900', damaged)
+    return items
+
+# adds prices to inventory items
+def add_prices(items, data):
+    for row in data:
+        item_id = row[0]
+        price = float(row[1])
+        if item_id in items:
+            items[item_id].price = price
+
+# adds service dates to inventory items
+def add_service_dates(items, data):
+    for row in data:
+        item_id = row[0]
+        service_date = row[1]
+        if item_id in items:
+            items[item_id].service_date = datetime.strptime(service_date, '%m/%d/%Y')
+
+# generates full inventory report
+def generate_full_inventory(items):
+    full_inventory = []
+    for item_id in sorted(items):
+        item = items[item_id]
+        full_inventory.append([item.item_id, item.manufacturer, item.item_type, item.price, item.service_date.strftime('%m/%d/%Y'), 'damaged' if item.damaged else ''])
+    write_csv('FullInventory.csv', full_inventory, ['item ID', 'manufacturer', 'item type', 'price', 'service date', 'damaged'])
+
+# generates inventory report by item type
+def generate_item_type_inventory(items):
+    laptop_inventory = []
+    phone_inventory = []
+    tower_inventory = []
+
+    for item_id in items:
+        item = items[item_id]
+        if item.item_type == 'laptop':
+            laptop_inventory.append([item.item_id, item.manufacturer, item.price, item.service_date.strftime('%m/%d/%Y'), 'damaged' if item.damaged else ''])
+        elif item.item_type == 'phone':
+            phone_inventory.append([item.item_id, item.manufacturer, item.price, item.service_date.strftime('%m/%d/%Y'), 'damaged' if item.damaged else ''])
+        elif item.item_type == 'tower':
+            tower_inventory.append([item.item_id, item.manufacturer, item.price, item.service_date.strftime('%m/%d/%Y'), 'damaged' if item.damaged else ''])
+
+    write_csv('LaptopInventory.csv', sorted(laptop_inventory))
+    write_csv('PhoneInventory.csv', sorted(phone_inventory))
+    write_csv('TowerInventory.csv', sorted(tower_inventory))
+
+# generates past service date inventory report
+def generate_past_service_date_inventory(items):
+    past_service_inventory = []
+    today = datetime.today()
+
+    for item_id in items:
+        item = items[item_id]
+        if item.service_date < today:
+            past_service_inventory.append([item.item_id, item.manufacturer, item.item_type, item.price, item.service_date.strftime('%m/%d/%Y'), 'damaged' if item.damaged else ''])
+
+    write_csv('PastServiceDateInventory.csv', sorted(past_service_inventory, key=lambda x: x[4]))
+
+# generates damaged inventory report
+def generate_damaged_inventory(items):
+    damaged_inventory = []
+
+    for item_id in items:
+        item = items[item_id]
+        if item.damaged:
+            damaged_inventory.append([item.item_id, item.manufacturer, item.item_type, item.price, item.service_date.strftime('%m/%d/%Y')])
+
+    write_csv('DamagedInventory.csv', sorted(damaged_inventory, key=lambda x: x[3], reverse=True))
+
+# function that runs everything
+def main():
+    # reads data from the CSV files
+    manufacturer_data = read_csv('ManufacturerList.csv')
+    price_data = read_csv('PriceList.csv')
+    service_dates_data = read_csv('ServiceDatesList.csv')
+
+    # stores and process the data
+    items = parse_manufacturer_list(manufacturer_data)
+    add_prices(items, price_data)
+    add_service_dates(items, service_dates_data)
+
+    # generates inventory reports
+    generate_full_inventory(items)
+    generate_item_type_inventory(items)
+    generate_past_service_date_inventory(items)
+    generate_damaged_inventory(items)
+
+# Run the main function
+if __name__ == "__main__":
+    main()
