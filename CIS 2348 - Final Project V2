@@ -1,29 +1,42 @@
+
+Sure! Here's your code with added comments to explain how it works:
+
+python
+Copy code
 import csv
 from datetime import datetime
 
+# Define the InventoryItem class to store details about each inventory item.
 class InventoryItem:
     def __init__(self, item_id, manufacturer, item_type, price, service_date, damaged=False):
+        # Initialize the attributes of the InventoryItem.
         self.item_id = item_id
         self.manufacturer = manufacturer
         self.item_type = item_type
         self.price = price
+        # Convert the service_date from string to a datetime object.
         self.service_date = datetime.strptime(service_date, '%m/%d/%Y')
         self.damaged = damaged
 
-'''Reading the CSV files and parsing the data'''
+# Function to read data from a CSV file.
 def read_csv(file_name):
     with open(file_name, mode='r') as file:
         csv_reader = csv.reader(file)
+        # Read each row in the CSV and store it in a list.
         data = [row for row in csv_reader]
     return data
 
+# Function to write data to a CSV file.
 def write_csv(file_name, data, headers=None):
     with open(file_name, mode='w', newline='') as file:
         csv_writer = csv.writer(file)
+        # If headers are provided, write them as the first row.
         if headers:
             csv_writer.writerow(headers)
+        # Write the data rows.
         csv_writer.writerows(data)
 
+# Function to parse the manufacturer list and create InventoryItem objects.
 def parse_manufacturer_list(data):
     items = {}
     for row in data:
@@ -31,19 +44,33 @@ def parse_manufacturer_list(data):
         manufacturer = row[1]
         item_type = row[2]
         damaged = row[3] if len(row) > 3 else ''
+        # Create an InventoryItem and store it in the items dictionary.
         items[item_id] = InventoryItem(item_id, manufacturer, item_type, 0, '01/01/1900', damaged == 'damaged')
     return items
 
+# Function to update the prices of items based on the price list.
 def parse_price_list(items, data):
     for row in data:
         item_id = row[0]
         price = float(row[1])
+        # Update the price of the item if it exists in the items dictionary.
         if item_id in items:
             items[item_id].price = price
 
+# Function to update the service dates of items based on the service dates list.
 def parse_service_dates_list(items, data):
     for row in data:
         item_id = row[0]
         service_date = row[1]
+        # Update the service date of the item if it exists in the items dictionary.
         if item_id in items:
             items[item_id].service_date = datetime.strptime(service_date, '%m/%d/%Y')
+
+# Function to generate the full inventory report and write it to a CSV file.
+def generate_full_inventory(items):
+    full_inventory = []
+    # Sort items by manufacturer and prepare the data for writing.
+    for item in sorted(items.values(), key=lambda x: x.manufacturer):
+        full_inventory.append([item.item_id, item.manufacturer, item.item_type, item.price, item.service_date.strftime('%m/%d/%Y'), 'damaged' if item.damaged else ''])
+    # Write the sorted data to 'FullInventory.csv'.
+    write_csv('FullInventory.csv', full_inventory, ['item ID', 'manufacturer', 'item type', 'price', 'service date', 'damaged'])
